@@ -4,5 +4,8 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="src" path="jar"/>
 	<classpathentry kind="lib" path="C:/Users/xuchunlin/eclipse-workspace/jd1903_smarthome/jar/smart_home_woss.jar" sourcepath="jar/smart_home_woss.jar"/>
+	<classpathentry kind="lib" path="jar/dom4j-1.6.1.jar"/>
+	<classpathentry kind="lib" path="jar/log4j-1.2.17.jar"/>
+	<classpathentry kind="lib" path="/jd1903_jdbc/jar/ojdbc14.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

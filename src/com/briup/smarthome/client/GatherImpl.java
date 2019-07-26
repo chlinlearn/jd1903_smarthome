@@ -1,19 +1,6 @@
 package com.briup.smarthome.client;
 
-import java.io.BufferedReader;
-import java.io.BufferedWriter;
-import java.io.DataInputStream;
-import java.io.DataOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.FileReader;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStreamWriter;
-import java.io.RandomAccessFile;
+import java.io.*;
 import java.math.BigInteger;
 import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
@@ -26,13 +13,23 @@ import java.util.Date;
 
 import com.briup.environment.bean.Environment;
 import com.briup.environment.client.Gather;
+import com.briup.environment.util.Configuration;
+import com.briup.environment.util.Log;
+import com.briup.smarthome.util.ConfigurationAware;
+import com.briup.smarthome.util.ConfigurationImpl;
+import com.briup.smarthome.util.LogImpl;
 
 //采集模块
-public class GatherImpl implements Gather {
-
+public class GatherImpl implements Gather ,ConfigurationAware{
+    private static Log log;
+    private String src_file;
+    private String record_file;
+    private Configuration conf;
+    
 	@Override
-	public void init(Properties arg0) throws Exception {
-
+	public void init(Properties properties) throws Exception {
+		src_file = properties.getProperty("src-file");
+		record_file = properties.getProperty("record-file");
 	}
 
 	/**
@@ -40,25 +37,27 @@ public class GatherImpl implements Gather {
 	 */
 	@Override
 	public Collection<Environment> gather() throws Exception {
+		log = conf.getLogger();
 		// 创建集合对象
 		List<Environment> list = new ArrayList<Environment>();
 		// 读取数据文件
-		File file = new File("file/radwtmp");
+		File file = new File(src_file);
 		// 存储文件
-		File file2 = new File("file/save");
+		File file2 = new File(record_file);
 		long len = 0;
 		if (file2.exists()) {
-			DataInputStream dis = new DataInputStream(new FileInputStream(file2));
-			len = dis.readLong();
+		    BufferedReader br = new BufferedReader(new FileReader(file2));
+		    len = Long.parseLong(br.readLine());
 		}
+		//读取基本数据类型
 		DataOutputStream dos = new DataOutputStream(new FileOutputStream(file2));
-		dos.writeLong(0);//清空
+		PrintWriter pw = new PrintWriter(dos);
 		// 下次读取文件时跳过已读部分
 		RandomAccessFile raf = new RandomAccessFile(file, "r");
 		raf.seek(len);
 		long len2 = raf.length();//获取文件的长度
-		dos.writeLong(len2);
-		dos.flush();
+		pw.print(len2);
+		pw.flush();
 		
 		String lineStr = null;
 		
@@ -94,19 +93,12 @@ public class GatherImpl implements Gather {
 				list.add(e);
 
 				// 湿度:((float)value*0.00190735)-6
-				Environment e2 = new Environment();
 				Integer sd = Integer.parseInt(data[6].substring(4, 8), 16);
 				Float f2 = (float) (((float) sd * 0.00190735) - 6);
-				e2.setName("湿度");
-				e2.setData(f2);
-				e2.setSrcId(data[0]);
-				e2.setDstId(data[1]);
-				e2.setDevId(data[2]);
-				e2.setSersorAddress(data[3]);
-				e2.setCount(Integer.parseInt(data[4]));
-				e2.setCmd(data[5]);
-				e2.setStatus(Integer.parseInt(data[7]));
-				e2.setGather_date(new Timestamp(Long.parseLong(data[8])));
+                Environment e2 = new Environment("湿度",data[0],data[1],
+                        data[2],data[3],Integer.parseInt(data[4]),data[5],
+                        Integer.parseInt(data[7]),f2,
+                        new Timestamp(Long.parseLong(data[8])));
 				count2++;
 				list.add(e2);
 			} else if ("256".equals(data[3])) {// 光照
@@ -126,22 +118,17 @@ public class GatherImpl implements Gather {
 			}
 		}
 
-
-		for (int i = 0; i < list.size(); i++) {
-			System.out.println(list.get(i).toString());
-		}
-		System.out.println("有效数据：" + count1);
-		System.out.println("温度湿度：" + count2);
-		System.out.println("光照：" + count3);
-		System.out.println("二氧化碳：" + count4);
-
-		// 关闭资源
+        log.debug("有效数据：" + count1);
+        log.debug("温度湿度：" + count2);
+        log.debug("光照强度：" + count3);
+        log.debug("二氧化碳：" + count4);
 
 		return list;
 	}
 
-	public static void main(String[] args) throws Exception {
-		GatherImpl g = new GatherImpl();
-		Collection<Environment> c = g.gather();
+	@Override
+	public void setConfiguration(Configuration conf) {
+		this.conf = conf;
 	}
+
 }

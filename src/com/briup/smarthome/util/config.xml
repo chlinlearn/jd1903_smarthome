@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<woss>
+	<server class="com.briup.smarthome.server.ServerImpl">
+		<port>8888</port>
+	</server>
+	<dbstore class="com.briup.smarthome.server.DBStoreImpl">
+		<batch-size>500</batch-size>
+	</dbstore>
+	<client class="com.briup.smarthome.client.ClientImpl">
+		<ip>127.0.0.1</ip>
+		<port>8888</port>
+	</client>
+	<gather class="com.briup.smarthome.client.GatherImpl">
+		<src-file>file/radwtmp</src-file>
+		<record-file>file/record</record-file>
+	</gather>
+	<logger class="com.briup.smarthome.util.LogImpl">
+		<log-properties>src/log4j.properties</log-properties>
+	</logger>
+</woss>
